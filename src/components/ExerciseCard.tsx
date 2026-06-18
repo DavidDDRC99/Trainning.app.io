@@ -28,12 +28,7 @@ export function ExerciseCard({ exercise, onAdd }: ExerciseCardProps) {
         </div>
       </div>
       <div className="flex items-center justify-between p-3">
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-medium text-white">{exercise.name}</h3>
-          <p className="text-xs text-slate-500">
-            {exercise.defaultSets} x {exercise.defaultReps}
-          </p>
-        </div>
+        <h3 className="truncate text-sm font-medium text-white">{exercise.name}</h3>
         <button
           onClick={() => onAdd(exercise)}
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent text-white transition-colors hover:bg-accent-hover cursor-pointer"
