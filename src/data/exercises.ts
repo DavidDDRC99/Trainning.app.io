@@ -90,7 +90,7 @@ export const exercises: Exercise[] = [
     name: 'Push Press',
     sport: 'halterofilia',
     mode: 'preparacio',
-    videoUrl: 'videos/push%20press.mp4',
+    videoUrl: 'videos/Push%20press.mp4',
     defaultSets: 4,
     defaultReps: 5,
   },
