@@ -16,17 +16,23 @@ const modeNames: Record<TrainingMode, string> = {
   directe: 'Entrenament Directe',
 }
 
+const modes: TrainingMode[] = ['preparacio', 'directe']
+
+const multiModeSports: Sport[] = ['halterofilia', 'atletisme']
+
 export function ExercisePage() {
-  const { sport, mode } = useParams<{ sport: Sport; mode: TrainingMode }>()
+  const { sport } = useParams<{ sport: Sport }>()
   const navigate = useNavigate()
+  const [activeMode, setActiveMode] = useState<TrainingMode>('directe')
   const [selectedExercises, setSelectedExercises] = useState<WorkoutExercici[]>([])
 
-  if (!sport || !mode) {
+  if (!sport) {
     navigate('/')
     return null
   }
 
-  const exercises = getExercises(sport, mode)
+  const hasModes = multiModeSports.includes(sport)
+  const exercises = getExercises(sport, hasModes ? activeMode : 'directe')
 
   const handleAdd = useCallback(
     (exercise: Exercise) => {
@@ -64,21 +70,38 @@ export function ExercisePage() {
   }, [])
 
   const handleStart = useCallback(() => {
-    navigate(`/${sport}/${mode}/workout`, { state: { exercises: selectedExercises } })
-  }, [navigate, sport, mode, selectedExercises])
+    navigate(`/${sport}/workout`, { state: { exercises: selectedExercises } })
+  }, [navigate, sport, selectedExercises])
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-44 pt-8">
       <header className="mb-6">
         <button
-          onClick={() => navigate(`/${sport}`)}
+          onClick={() => navigate('/')}
           className="mb-4 text-sm text-slate-500 hover:text-white transition-colors cursor-pointer"
         >
           &larr; Enrere
         </button>
         <h1 className="text-2xl font-bold text-white">{sportNames[sport]}</h1>
-        <p className="mt-1 text-sm text-slate-500">{modeNames[mode]}</p>
       </header>
+
+      {hasModes && (
+        <div className="mb-6 flex gap-2">
+          {modes.map((m) => (
+            <button
+              key={m}
+              onClick={() => setActiveMode(m)}
+              className={`rounded-xl px-4 py-2 text-sm font-medium transition-all cursor-pointer ${
+                activeMode === m
+                  ? 'bg-accent text-white'
+                  : 'border border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+              }`}
+            >
+              {modeNames[m]}
+            </button>
+          ))}
+        </div>
+      )}
 
       {exercises.length === 0 ? (
         <p className="mt-10 text-center text-sm text-slate-600">Cap exercici disponible</p>

@@ -121,16 +121,6 @@ export const exercises: Exercise[] = [
     defaultSets: 4,
     defaultReps: 8,
   },
-  {
-    id: 'hal-pullup',
-    name: 'Dominades',
-    sport: 'halterofilia',
-    mode: 'preparacio',
-    videoUrl: 'videos/pull%20ups.mp4',
-    defaultSets: 3,
-    defaultReps: 10,
-  },
-
   // --- ATLETISME - DIRECTE ---
   {
     id: 'atl-sprint',

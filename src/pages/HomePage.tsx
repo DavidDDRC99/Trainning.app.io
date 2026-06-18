@@ -27,12 +27,8 @@ const sports: { sport: Sport; name: string; icon: string; description: string; o
 export function HomePage() {
   const navigate = useNavigate()
 
-  const handleClick = (sport: Sport, onlyDirecte?: boolean) => {
-    if (onlyDirecte) {
-      navigate(`/${sport}/directe`)
-    } else {
-      navigate(`/${sport}`)
-    }
+  const handleClick = (sport: Sport) => {
+    navigate(`/${sport}`)
   }
 
   return (
@@ -49,7 +45,7 @@ export function HomePage() {
             name={s.name}
             icon={s.icon}
             description={s.description}
-            onClick={() => handleClick(s.sport, s.onlyDirecte)}
+            onClick={() => handleClick(s.sport)}
           />
         ))}
       </nav>
