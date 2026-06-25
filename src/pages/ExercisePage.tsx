@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getExercises } from '../data/exercises'
 import { ExerciseCard } from '../components/ExerciseCard'
 import { WorkoutSummary } from '../components/WorkoutSummary'
+import { AddExerciseModal } from '../components/AddExerciseModal'
 import type { Exercise, Sport, TrainingMode, WorkoutExercici } from '../types'
 
 const sportNames: Record<Sport, string> = {
@@ -25,6 +26,7 @@ export function ExercisePage() {
   const navigate = useNavigate()
   const [activeMode, setActiveMode] = useState<TrainingMode>('directe')
   const [selectedExercises, setSelectedExercises] = useState<WorkoutExercici[]>([])
+  const [modalExercise, setModalExercise] = useState<Exercise | null>(null)
 
   if (!sport) {
     navigate('/')
@@ -34,24 +36,22 @@ export function ExercisePage() {
   const hasModes = multiModeSports.includes(sport)
   const exercises = getExercises(sport, hasModes ? activeMode : 'directe')
 
-  const handleAdd = useCallback(
-    (exercise: Exercise) => {
-      setSelectedExercises((prev) => {
-        if (prev.find((e) => e.id === exercise.id)) return prev
-        return [
-          ...prev,
-          {
-            id: exercise.id,
-            name: exercise.name,
-            videoUrl: exercise.videoUrl,
-            sets: exercise.defaultSets,
-            reps: exercise.defaultReps,
-          },
-        ]
-      })
-    },
-    [],
-  )
+  const handleAddClick = useCallback((exercise: Exercise) => {
+    if (selectedExercises.find((e) => e.id === exercise.id)) return
+    setModalExercise(exercise)
+  }, [selectedExercises])
+
+  const handleModalConfirm = useCallback((entry: WorkoutExercici) => {
+    setSelectedExercises((prev) => {
+      if (prev.find((e) => e.id === entry.id)) return prev
+      return [...prev, entry]
+    })
+    setModalExercise(null)
+  }, [])
+
+  const handleModalCancel = useCallback(() => {
+    setModalExercise(null)
+  }, [])
 
   const handleUpdateSets = useCallback((id: string, sets: number) => {
     setSelectedExercises((prev) =>
@@ -108,7 +108,7 @@ export function ExercisePage() {
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {exercises.map((ex) => (
-            <ExerciseCard key={ex.id} exercise={ex} onAdd={handleAdd} />
+            <ExerciseCard key={ex.id} exercise={ex} onAdd={handleAddClick} />
           ))}
         </div>
       )}
@@ -120,6 +120,14 @@ export function ExercisePage() {
         onRemove={handleRemove}
         onStart={handleStart}
       />
+
+      {modalExercise && (
+        <AddExerciseModal
+          exercise={modalExercise}
+          onConfirm={handleModalConfirm}
+          onCancel={handleModalCancel}
+        />
+      )}
     </div>
   )
 }

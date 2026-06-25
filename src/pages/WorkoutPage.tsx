@@ -1,7 +1,21 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTimer } from '../hooks/useTimer'
 import { RestTimer } from '../components/RestTimer'
 import type { WorkoutExercici } from '../types'
+
+function calcTotalUnits(exercises: WorkoutExercici[]) {
+  return exercises.reduce((t, e) => t + (e.type === 'duration' ? 1 : e.sets), 0)
+}
+
+function calcCompletedUnits(exercises: WorkoutExercici[], idx: number, set: number) {
+  let done = 0
+  for (let i = 0; i < idx; i++) {
+    done += exercises[i].type === 'duration' ? 1 : exercises[i].sets
+  }
+  done += set - 1
+  return done
+}
 
 export function WorkoutPage() {
   const navigate = useNavigate()
@@ -10,19 +24,27 @@ export function WorkoutPage() {
 
   const [currentIdx, setCurrentIdx] = useState(0)
   const [currentSet, setCurrentSet] = useState(1)
-  const [repsDone, setRepsDone] = useState(0)
-  const [isResting, setIsResting] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   const current = exercises[currentIdx]
   const totalExercises = exercises.length
-  const totalSets = current?.sets ?? 0
+  const isDuration = current?.type === 'duration'
+
+  const execTotalSeconds = isDuration
+    ? (current?.durationMinutes ?? 0) * 60
+    : (current?.reps ?? 0) * (current?.execTimePerRep ?? 0)
+
+  const timer = useTimer(execTotalSeconds)
+  const [phase, setPhase] = useState<'executing' | 'paused' | 'resting'>('executing')
+
+  const totalUnits = calcTotalUnits(exercises)
+  const completedUnits = calcCompletedUnits(exercises, currentIdx, currentSet)
+  const progressPct = totalUnits > 0 ? (completedUnits / totalUnits) * 100 : 0
 
   useEffect(() => {
     setCurrentSet(1)
-    setRepsDone(0)
-    setIsResting(false)
+    setPhase('executing')
   }, [currentIdx])
 
   useEffect(() => {
@@ -32,37 +54,71 @@ export function WorkoutPage() {
     }
   }, [currentIdx, currentSet])
 
-  const handleRep = useCallback(() => {
-    if (repsDone < current.reps) {
-      setRepsDone((r) => r + 1)
+  useEffect(() => {
+    if (phase === 'executing' && !timer.isRunning) {
+      timer.start(execTotalSeconds)
     }
-  }, [repsDone, current])
+  }, [phase, timer.isRunning])
 
-  const handleSetComplete = useCallback(() => {
-    if (currentSet < totalSets) {
-      setIsResting(true)
+  useEffect(() => {
+    if (phase === 'executing' && timer.isRunning && timer.time === 0) {
+      if (isDuration) {
+        if (currentIdx < totalExercises - 1) {
+          setCurrentIdx((i) => i + 1)
+        } else {
+          setIsComplete(true)
+        }
+      } else {
+        setPhase('resting')
+      }
+    }
+  }, [timer.time, timer.isRunning, phase, isDuration, currentIdx, totalExercises])
+
+  const handlePause = useCallback(() => {
+    timer.stop()
+    setPhase('paused')
+  }, [timer])
+
+  const handleResume = useCallback(() => {
+    timer.start()
+    setPhase('executing')
+  }, [timer])
+
+  const handleSkip = useCallback(() => {
+    timer.stop()
+    if (isDuration) {
+      if (currentIdx < totalExercises - 1) {
+        setCurrentIdx((i) => i + 1)
+      } else {
+        setIsComplete(true)
+      }
+    } else {
+      setPhase('resting')
+    }
+  }, [timer, isDuration, currentIdx, totalExercises])
+
+  const handleRestEnd = useCallback(() => {
+    if (currentSet < current.sets) {
+      setCurrentSet((s) => s + 1)
     } else if (currentIdx < totalExercises - 1) {
-      setIsResting(true)
       setCurrentIdx((i) => i + 1)
     } else {
       setIsComplete(true)
     }
-    setRepsDone(0)
-  }, [currentSet, totalSets, currentIdx, totalExercises])
-
-  const handleRestEnd = useCallback(() => {
-    setIsResting(false)
-    if (currentSet < totalSets) {
-      setCurrentSet((s) => s + 1)
-    }
-  }, [currentSet, totalSets])
+  }, [currentSet, current, currentIdx, totalExercises])
 
   const handlePrevExercise = useCallback(() => {
     if (currentIdx > 0) {
+      timer.stop()
       setCurrentIdx((i) => i - 1)
-      setIsResting(false)
     }
-  }, [currentIdx])
+  }, [currentIdx, timer])
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
 
   if (exercises.length === 0) {
     navigate('/')
@@ -72,7 +128,7 @@ export function WorkoutPage() {
   if (isComplete) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-slate-950 px-5">
-        <span className="mb-4 text-6xl">🎉</span>
+        <span className="mb-4 text-6xl">&#127881;</span>
         <h1 className="text-2xl font-bold text-white">Entrenament completat!</h1>
         <p className="mt-2 text-sm text-slate-400">{exercises.length} exercicis fets</p>
         <button
@@ -102,9 +158,15 @@ export function WorkoutPage() {
       <div className="flex flex-1 flex-col">
         <div className="px-5">
           <h1 className="text-xl font-bold text-white">{current.name}</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
-            Sèrie {currentSet} de {totalSets}
-          </p>
+          {isDuration ? (
+            <p className="mt-0.5 text-sm text-slate-500">
+              {current.speedKmh} km/h &middot; {current.durationMinutes} min
+            </p>
+          ) : (
+            <p className="mt-0.5 text-sm text-slate-500">
+              S&egrave;rie {currentSet} de {current.sets}
+            </p>
+          )}
         </div>
 
         <div className="relative mx-5 mt-4 flex-1 overflow-hidden rounded-2xl bg-slate-900">
@@ -122,31 +184,61 @@ export function WorkoutPage() {
         </div>
 
         <div className="px-5 py-6">
-          {isResting ? (
-            <RestTimer isResting={isResting} onRestEnd={handleRestEnd} />
+          {phase === 'resting' && !isDuration ? (
+            <RestTimer
+              duration={current.restTime}
+              isResting={true}
+              onRestEnd={handleRestEnd}
+            />
           ) : (
             <div className="flex flex-col items-center gap-5">
-              <button
-                onClick={handleRep}
-                className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-accent text-4xl font-bold text-white transition-all active:scale-95 cursor-pointer"
-              >
-                {repsDone}
-              </button>
-              <p className="text-sm text-slate-500">
-                Toca per comptar repeticions &mdash; {repsDone}/{current.reps}
-              </p>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-sm text-slate-400">
+                  {isDuration ? 'Temps restant' : `${current.reps} repeticions`}
+                </span>
+                <span className="text-5xl font-bold text-white tabular-nums">
+                  {formatTime(timer.time)}
+                </span>
+                {!isDuration && (
+                  <span className="text-xs text-slate-600">
+                    {current.reps} &times; {current.execTimePerRep}s = {execTotalSeconds}s
+                  </span>
+                )}
+              </div>
 
-              <button
-                onClick={handleSetComplete}
-                disabled={repsDone < current.reps}
-                className="w-full rounded-xl bg-accent py-4 text-center text-base font-semibold text-white transition-all hover:bg-accent-hover disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {currentSet < totalSets
-                  ? 'Completar sèrie'
-                  : currentIdx < totalExercises - 1
-                    ? 'Següent exercici'
-                    : 'Finalitzar entrenament'}
-              </button>
+              <div className="flex gap-3">
+                {phase === 'paused' ? (
+                  <button
+                    onClick={handleResume}
+                    className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover cursor-pointer"
+                  >
+                    Reprendre
+                  </button>
+                ) : (
+                  <button
+                    onClick={handlePause}
+                    className="rounded-xl bg-slate-800 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-slate-700 cursor-pointer"
+                  >
+                    Pausa
+                  </button>
+                )}
+                <button
+                  onClick={handleSkip}
+                  className="rounded-xl border border-slate-700 px-6 py-3 text-sm font-medium text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  {isDuration ? 'Finalitzar' : 'Omet'}
+                </button>
+              </div>
+
+              {!isDuration && (
+                <p className="text-xs text-slate-600">
+                  {currentSet < current.sets
+                    ? `Següent: Descans ${current.restTime}s`
+                    : currentIdx < totalExercises - 1
+                    ? `Següent: ${exercises[currentIdx + 1].name}`
+                    : 'Últim exercici'}
+                </p>
+              )}
 
               {currentIdx > 0 && (
                 <button
@@ -164,11 +256,7 @@ export function WorkoutPage() {
       <div className="h-1 bg-slate-800">
         <div
           className="h-full bg-accent transition-all duration-300"
-          style={{
-            width: `${
-              ((currentIdx * totalSets + currentSet - 1) / (totalExercises * totalSets)) * 100
-            }%`,
-          }}
+          style={{ width: `${progressPct}%` }}
         />
       </div>
     </div>

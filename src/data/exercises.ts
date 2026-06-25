@@ -121,6 +121,15 @@ export const exercises: Exercise[] = [
     defaultSets: 4,
     defaultReps: 8,
   },
+  {
+    id: 'hal-lunges',
+    name: 'Zancades',
+    sport: 'halterofilia',
+    mode: 'preparacio',
+    videoUrl: 'videos/Lunges.mp4',
+    defaultSets: 3,
+    defaultReps: 10,
+  },
   // --- ATLETISME - DIRECTE ---
   {
     id: 'atl-sprint',
@@ -213,6 +222,9 @@ export const exercises: Exercise[] = [
     videoUrl: 'videos/Running.mp4',
     defaultSets: 1,
     defaultReps: 1,
+    type: 'duration',
+    defaultDurationMinutes: 20,
+    defaultSpeedKmh: 10,
   },
 
   // --- CALISTÈNIA ---

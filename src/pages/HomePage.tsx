@@ -34,8 +34,19 @@ export function HomePage() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-5 py-8">
       <header className="mb-10">
-        <h1 className="text-3xl font-bold text-white">Entrenament</h1>
-        <p className="mt-1 text-sm text-slate-500">Escull un esport per comen&ccedil;ar</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Entrenament</h1>
+            <p className="mt-1 text-sm text-slate-500">Escull un esport per comen&ccedil;ar</p>
+          </div>
+          <button
+            onClick={() => navigate('/settings')}
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="Configuració"
+          >
+            &#9881;
+          </button>
+        </div>
       </header>
       <nav className="flex flex-col gap-4">
         {sports.map((s) => (

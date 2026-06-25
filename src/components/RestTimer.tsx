@@ -2,18 +2,19 @@ import { useTimer } from '../hooks/useTimer'
 import { useEffect } from 'react'
 
 interface RestTimerProps {
+  duration: number
   isResting: boolean
   onRestEnd: () => void
 }
 
-export function RestTimer({ isResting, onRestEnd }: RestTimerProps) {
-  const { time, isRunning, start, stop, reset } = useTimer(90)
+export function RestTimer({ duration, isResting, onRestEnd }: RestTimerProps) {
+  const { time, isRunning, start, stop, reset } = useTimer(duration)
 
   useEffect(() => {
     if (isResting && !isRunning) {
-      start(90)
+      start(duration)
     }
-  }, [isResting, isRunning, start])
+  }, [isResting, isRunning, start, duration])
 
   useEffect(() => {
     if (isRunning && time === 0) {
@@ -40,7 +41,7 @@ export function RestTimer({ isResting, onRestEnd }: RestTimerProps) {
             stroke="#06b6d4"
             strokeWidth="4"
             strokeDasharray={213.6}
-            strokeDashoffset={213.6 * (1 - time / 90)}
+            strokeDashoffset={213.6 * (1 - time / duration)}
             strokeLinecap="round"
           />
         </svg>
@@ -56,7 +57,7 @@ export function RestTimer({ isResting, onRestEnd }: RestTimerProps) {
           {isRunning ? 'Pausa' : 'Reprendre'}
         </button>
         <button
-          onClick={() => reset(90)}
+          onClick={() => reset(duration)}
           className="rounded-lg bg-slate-800 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-700 cursor-pointer"
         >
           Reiniciar
