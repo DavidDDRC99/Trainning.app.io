@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { exercises } from '../data/exercises'
 import { getConfigs, saveAllConfigs, getDefaultExecTime, getDefaultRestTime } from '../utils/config'
@@ -18,7 +18,7 @@ function getUniqueNames() {
 
 export function ConfigPage() {
   const navigate = useNavigate()
-  const uniqueNames = getUniqueNames()
+  const uniqueNames = useMemo(() => getUniqueNames(), [])
   const [configs, setConfigs] = useState<Record<string, { execTime?: number; restTime?: number; duration?: number; speed?: number }>>({})
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function ConfigPage() {
       }
     }
     setConfigs(mapped)
-  }, [uniqueNames])
+  }, [])
 
   const updateReps = useCallback((name: string, field: 'execTime' | 'restTime', value: number) => {
     setConfigs((prev) => ({
