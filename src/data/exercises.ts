@@ -4,7 +4,7 @@ export const exercises: Exercise[] = [
   // --- HALTEROFÍLIA - DIRECTE ---
   {
     id: 'hal-snatch',
-    name: 'Arrancada',
+    name: 'Snatch',
     sport: 'halterofilia',
     mode: 'directe',
     videoUrl: 'videos/Snatch_video.mp4',
@@ -49,7 +49,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'hal-clean-pull',
-    name: 'Estirada de clean',
+    name: 'Clean pull',
     sport: 'halterofilia',
     mode: 'directe',
     videoUrl: 'videos/clean%20pull.mp4',
@@ -60,7 +60,7 @@ export const exercises: Exercise[] = [
   // --- HALTEROFÍLIA - PREPARACIÓ FÍSICA ---
   {
     id: 'hal-squat',
-    name: 'Esquat',
+    name: 'Squat',
     sport: 'halterofilia',
     mode: 'preparacio',
     videoUrl: 'videos/Squat_video.mp4',
@@ -69,7 +69,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'hal-front-squat',
-    name: 'Esquat frontal',
+    name: 'Squat frontal',
     sport: 'halterofilia',
     mode: 'preparacio',
     videoUrl: 'videos/Front%20squat.mp4',
@@ -133,7 +133,7 @@ export const exercises: Exercise[] = [
   // --- ATLETISME - DIRECTE ---
   {
     id: 'atl-sprint',
-    name: 'Esprints 30-100m',
+    name: 'Sprints ',
     sport: 'atletisme',
     mode: 'directe',
     videoUrl: 'videos/Sprint.mp4',
@@ -162,7 +162,7 @@ export const exercises: Exercise[] = [
   // --- ATLETISME - PREPARACIÓ FÍSICA ---
   {
     id: 'atl-squat',
-    name: 'Esquat',
+    name: 'Squat',
     sport: 'atletisme',
     mode: 'preparacio',
     videoUrl: 'videos/Squat_video.mp4',
@@ -207,7 +207,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'atl-hill-sprint',
-    name: 'Esprint en pendent',
+    name: 'Sprint en pendent',
     sport: 'atletisme',
     mode: 'preparacio',
     videoUrl: 'videos/Uphill%20sprint.mp4',
