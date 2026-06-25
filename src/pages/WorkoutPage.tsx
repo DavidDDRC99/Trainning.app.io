@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useTimer } from '../hooks/useTimer'
 import { RestTimer } from '../components/RestTimer'
 import type { WorkoutExercici } from '../types'
 
@@ -35,17 +34,46 @@ export function WorkoutPage() {
     ? (current?.durationMinutes ?? 0) * 60
     : (current?.reps ?? 0) * (current?.execTimePerRep ?? 0)
 
-  const timer = useTimer(execTotalSeconds)
+  const [execTimeLeft, setExecTimeLeft] = useState(execTotalSeconds)
   const [phase, setPhase] = useState<'executing' | 'paused' | 'resting'>('executing')
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerStartedRef = useRef(false)
 
   const totalUnits = calcTotalUnits(exercises)
   const completedUnits = calcCompletedUnits(exercises, currentIdx, currentSet)
   const progressPct = totalUnits > 0 ? (completedUnits / totalUnits) * 100 : 0
 
+  const clearTimer = useCallback(() => {
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }, [])
+
+  const startTimer = useCallback((seconds: number) => {
+    clearTimer()
+    setExecTimeLeft(seconds)
+    timerStartedRef.current = true
+    intervalRef.current = setInterval(() => {
+      setExecTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!)
+          intervalRef.current = null
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }, [clearTimer])
+
+  const stopTimer = useCallback(() => {
+    clearTimer()
+  }, [clearTimer])
+
   useEffect(() => {
     setCurrentSet(1)
     setPhase('executing')
-    timer.start(execTotalSeconds)
+    startTimer(execTotalSeconds)
   }, [currentIdx])
 
   useEffect(() => {
@@ -56,7 +84,8 @@ export function WorkoutPage() {
   }, [currentIdx, currentSet])
 
   useEffect(() => {
-    if (phase === 'executing' && timer.isFinished) {
+    if (phase === 'executing' && execTimeLeft === 0 && timerStartedRef.current) {
+      timerStartedRef.current = false
       if (isDuration) {
         if (currentIdx < totalExercises - 1) {
           setCurrentIdx((i) => i + 1)
@@ -67,20 +96,29 @@ export function WorkoutPage() {
         setPhase('resting')
       }
     }
-  }, [timer.isFinished, phase, isDuration, currentIdx, totalExercises])
+  }, [execTimeLeft, phase, isDuration, currentIdx, totalExercises])
 
   const handlePause = useCallback(() => {
-    timer.stop()
+    stopTimer()
     setPhase('paused')
-  }, [timer])
+  }, [stopTimer])
 
   const handleResume = useCallback(() => {
-    timer.start()
+    intervalRef.current = setInterval(() => {
+      setExecTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!)
+          intervalRef.current = null
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
     setPhase('executing')
-  }, [timer])
+  }, [])
 
   const handleSkip = useCallback(() => {
-    timer.stop()
+    stopTimer()
     if (isDuration) {
       if (currentIdx < totalExercises - 1) {
         setCurrentIdx((i) => i + 1)
@@ -90,26 +128,26 @@ export function WorkoutPage() {
     } else {
       setPhase('resting')
     }
-  }, [timer, isDuration, currentIdx, totalExercises])
+  }, [stopTimer, isDuration, currentIdx, totalExercises])
 
   const handleRestEnd = useCallback(() => {
     if (currentSet < current.sets) {
       setCurrentSet((s) => s + 1)
       setPhase('executing')
-      timer.start(execTotalSeconds)
+      startTimer(execTotalSeconds)
     } else if (currentIdx < totalExercises - 1) {
       setCurrentIdx((i) => i + 1)
     } else {
       setIsComplete(true)
     }
-  }, [currentSet, current, currentIdx, totalExercises, timer, execTotalSeconds])
+  }, [currentSet, current, currentIdx, totalExercises, startTimer, execTotalSeconds])
 
   const handlePrevExercise = useCallback(() => {
     if (currentIdx > 0) {
-      timer.stop()
+      stopTimer()
       setCurrentIdx((i) => i - 1)
     }
-  }, [currentIdx, timer])
+  }, [currentIdx, stopTimer])
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
@@ -194,7 +232,7 @@ export function WorkoutPage() {
                   {isDuration ? 'Temps restant' : `${current.reps} repeticions`}
                 </span>
                 <span className="text-5xl font-bold text-white tabular-nums">
-                  {formatTime(timer.time)}
+                  {formatTime(execTimeLeft)}
                 </span>
                 {!isDuration && (
                   <span className="text-xs text-slate-600">

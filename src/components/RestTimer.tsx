@@ -1,5 +1,4 @@
-import { useTimer } from '../hooks/useTimer'
-import { useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 interface RestTimerProps {
   duration: number
@@ -8,22 +7,51 @@ interface RestTimerProps {
 }
 
 export function RestTimer({ duration, isResting, onRestEnd }: RestTimerProps) {
-  const { time, isRunning, isFinished, start, stop, reset } = useTimer(duration)
+  const [timeLeft, setTimeLeft] = useState(duration)
+  const [running, setRunning] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerStartedRef = useRef(false)
+
+  const clearTimer = useCallback(() => {
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }, [])
+
+  const startTimer = useCallback((seconds: number) => {
+    clearTimer()
+    setTimeLeft(seconds)
+    setRunning(true)
+    timerStartedRef.current = true
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!)
+          intervalRef.current = null
+          setRunning(false)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }, [clearTimer])
 
   useEffect(() => {
     if (isResting) {
-      start(duration)
+      startTimer(duration)
     }
   }, [isResting])
 
   useEffect(() => {
-    if (isResting && isFinished) {
+    if (timeLeft === 0 && timerStartedRef.current) {
+      timerStartedRef.current = false
       onRestEnd()
     }
-  }, [isFinished])
+  }, [timeLeft, onRestEnd])
 
-  const minutes = Math.floor(time / 60)
-  const seconds = time % 60
+  const minutes = Math.floor(timeLeft / 60)
+  const seconds = timeLeft % 60
 
   if (!isResting) return null
 
@@ -41,7 +69,7 @@ export function RestTimer({ duration, isResting, onRestEnd }: RestTimerProps) {
             stroke="#06b6d4"
             strokeWidth="4"
             strokeDasharray={213.6}
-            strokeDashoffset={213.6 * (1 - time / duration)}
+            strokeDashoffset={213.6 * (1 - timeLeft / duration)}
             strokeLinecap="round"
           />
         </svg>
@@ -51,13 +79,31 @@ export function RestTimer({ duration, isResting, onRestEnd }: RestTimerProps) {
       </div>
       <div className="flex gap-2">
         <button
-          onClick={isRunning ? stop : () => start()}
+          onClick={() => {
+            if (running) {
+              clearTimer()
+              setRunning(false)
+            } else {
+              setRunning(true)
+              intervalRef.current = setInterval(() => {
+                setTimeLeft((prev) => {
+                  if (prev <= 1) {
+                    clearInterval(intervalRef.current!)
+                    intervalRef.current = null
+                    setRunning(false)
+                    return 0
+                  }
+                  return prev - 1
+                })
+              }, 1000)
+            }
+          }}
           className="rounded-lg bg-slate-800 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-700 cursor-pointer"
         >
-          {isRunning ? 'Pausa' : 'Reprendre'}
+          {running ? 'Pausa' : 'Reprendre'}
         </button>
         <button
-          onClick={() => reset(duration)}
+          onClick={() => startTimer(duration)}
           className="rounded-lg bg-slate-800 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-700 cursor-pointer"
         >
           Reiniciar
