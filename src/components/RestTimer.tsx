@@ -8,19 +8,19 @@ interface RestTimerProps {
 }
 
 export function RestTimer({ duration, isResting, onRestEnd }: RestTimerProps) {
-  const { time, isRunning, start, stop, reset } = useTimer(duration)
+  const { time, isRunning, isFinished, start, stop, reset } = useTimer(duration)
 
   useEffect(() => {
-    if (isResting && !isRunning) {
+    if (isResting) {
       start(duration)
     }
-  }, [isResting, isRunning, start, duration])
+  }, [isResting])
 
   useEffect(() => {
-    if (isRunning && time === 0) {
+    if (isResting && isFinished) {
       onRestEnd()
     }
-  }, [time, isRunning, onRestEnd])
+  }, [isFinished])
 
   const minutes = Math.floor(time / 60)
   const seconds = time % 60

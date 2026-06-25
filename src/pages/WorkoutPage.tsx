@@ -45,6 +45,7 @@ export function WorkoutPage() {
   useEffect(() => {
     setCurrentSet(1)
     setPhase('executing')
+    timer.start(execTotalSeconds)
   }, [currentIdx])
 
   useEffect(() => {
@@ -55,13 +56,7 @@ export function WorkoutPage() {
   }, [currentIdx, currentSet])
 
   useEffect(() => {
-    if (phase === 'executing' && !timer.isRunning) {
-      timer.start(execTotalSeconds)
-    }
-  }, [phase, timer.isRunning])
-
-  useEffect(() => {
-    if (phase === 'executing' && timer.isRunning && timer.time === 0) {
+    if (phase === 'executing' && timer.isFinished) {
       if (isDuration) {
         if (currentIdx < totalExercises - 1) {
           setCurrentIdx((i) => i + 1)
@@ -72,7 +67,7 @@ export function WorkoutPage() {
         setPhase('resting')
       }
     }
-  }, [timer.time, timer.isRunning, phase, isDuration, currentIdx, totalExercises])
+  }, [timer.isFinished, phase, isDuration, currentIdx, totalExercises])
 
   const handlePause = useCallback(() => {
     timer.stop()
@@ -100,12 +95,14 @@ export function WorkoutPage() {
   const handleRestEnd = useCallback(() => {
     if (currentSet < current.sets) {
       setCurrentSet((s) => s + 1)
+      setPhase('executing')
+      timer.start(execTotalSeconds)
     } else if (currentIdx < totalExercises - 1) {
       setCurrentIdx((i) => i + 1)
     } else {
       setIsComplete(true)
     }
-  }, [currentSet, current, currentIdx, totalExercises])
+  }, [currentSet, current, currentIdx, totalExercises, timer, execTotalSeconds])
 
   const handlePrevExercise = useCallback(() => {
     if (currentIdx > 0) {

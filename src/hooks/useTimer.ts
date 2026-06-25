@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 export function useTimer(initialTime: number = 0) {
   const [time, setTime] = useState(initialTime)
   const [isRunning, setIsRunning] = useState(false)
+  const [isFinished, setIsFinished] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const clearTimer = useCallback(() => {
@@ -15,6 +16,7 @@ export function useTimer(initialTime: number = 0) {
   const start = useCallback(
     (seconds?: number) => {
       clearTimer()
+      setIsFinished(false)
       if (seconds !== undefined) setTime(seconds)
       setIsRunning(true)
     },
@@ -30,6 +32,7 @@ export function useTimer(initialTime: number = 0) {
     (seconds?: number) => {
       clearTimer()
       setIsRunning(false)
+      setIsFinished(false)
       setTime(seconds ?? initialTime)
     },
     [clearTimer, initialTime],
@@ -42,6 +45,7 @@ export function useTimer(initialTime: number = 0) {
         if (prev <= 1) {
           clearTimer()
           setIsRunning(false)
+          setIsFinished(true)
           return 0
         }
         return prev - 1
@@ -50,5 +54,5 @@ export function useTimer(initialTime: number = 0) {
     return clearTimer
   }, [isRunning, clearTimer])
 
-  return { time, isRunning, start, stop, reset }
+  return { time, isRunning, isFinished, start, stop, reset }
 }
